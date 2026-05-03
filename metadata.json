@@ -1,0 +1,7 @@
+{
+  "name": "Remix: PayMoment - The Ultimate Nigerian Fintech Experience",
+  "description": "A high-performance fintech app inspired by OPay and Moniepoint, featuring smart expense AI, seamless transfers, and virtual dollar cards.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
