@@ -64,7 +64,9 @@ const Bills: React.FC<BillsProps> = ({ notify, processTransaction, user }) => {
         category: 'Bills',
         timestamp: new Date().toISOString(),
         status: 'completed',
-        remark: `Bill payment for ${customerId}`
+        remark: `Bill payment for ${customerId}`,
+        senderAccountNumber: user.accountNumber,
+        recipientAccountNumber: customerId
       };
 
       await processTransaction(tx, 'NGN', pin);

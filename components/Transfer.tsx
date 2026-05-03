@@ -328,13 +328,13 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
            </div>
            <div className="space-y-3">
               <ReceiptDetailRow label="Sender" value={user.name} />
-              <ReceiptDetailRow label="Payer Account" value={user.accountNumber} isMono />
+              <ReceiptDetailRow label="Sender Account" value={user.accountNumber} isMono />
               <ReceiptDetailRow 
                 label="Recipient" 
                 value={verifiedName} 
                 suffix={recipientUid ? <span className="text-blue-500 ml-1">✓</span> : undefined}
               />
-              <ReceiptDetailRow label="Beneficiary Account" value={verifiedAccountNumber || accountNumber || payMomentValue} isMono />
+              <ReceiptDetailRow label="Recipient Account" value={verifiedAccountNumber || accountNumber || payMomentValue} isMono />
               <ReceiptDetailRow label="Bank" value={type === 'bank' ? bank : 'PayMoment'} />
               <ReceiptDetailRow label="Amount" value={`₦${amount}`} />
               <ReceiptDetailRow label="Date & Time" value={new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })} />
