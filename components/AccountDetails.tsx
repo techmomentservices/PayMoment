@@ -87,7 +87,7 @@ const AccountDetails: React.FC<AccountDetailsProps> = ({ user, notify }) => {
             </div>
 
             <div className="space-y-6">
-              <DetailRow label="Bank Name" value="PayMoment Bank (Wema Bank)" onCopy={() => copyToClipboard('Bank Name', 'PayMoment Bank')} />
+              <DetailRow label="Bank Name" value={user.bankName ? `PayMoment Bank (${user.bankName})` : "PayMoment Bank (Wema Bank)"} onCopy={() => copyToClipboard('Bank Name', user.bankName || 'PayMoment Bank')} />
               <DetailRow label="Account Number" value={user.accountNumber} onCopy={() => copyToClipboard('Account Number', user.accountNumber)} />
               <DetailRow label="Account Holder" value={user.name} onCopy={() => copyToClipboard('Account Holder', user.name)} />
             </div>

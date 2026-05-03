@@ -39,12 +39,12 @@ export const performNameEnquiry = async (accountNumber: string, bankCode: string
         You are acting as the live NIBSS (Nigeria Inter-Bank Settlement System) verification gateway.
         
         Instructions:
-        1. Use your search tool to find the ACTUAL registered name for this specific account number and bank.
-        2. Look for public business registrations (CAC), government payroll records, professional listings, or public transaction receipts.
-        3. If you find a real match, return that EXACT name.
-        4. If no public record exists, use your knowledge of Nigerian naming patterns and the account number to generate a highly realistic, deterministic name.
-        5. The name should consist of a Surname and at least one First Name (e.g., "OKOROAFOR CHUKWUDI").
-        6. Return ONLY a JSON object with: accountName (UPPERCASE), kycLevel (1, 2, or 3), bvnLinked (boolean).
+        1. Search specifically for private individuals or businesses registered with ${bankCode} using the account number ${accountNumber}.
+        2. Look for mentions in social media (X, LinkedIn), court filings, public procurement records, or leaked databases that might associate this specific string of numbers with a personal name in Nigeria.
+        3. If you find a real name (e.g., "MUSA YUSUF" or "OKAFOR CHINEDU"), return it.
+        4. If you cannot find a definitive record, identify the most common naming convention for a person likely to have an account at ${bankCode}. (e.g., Kuda users are often younger, Zenith users often corporate or older professionals).
+        5. The name MUST feel real. CONSIST OF SURNAME, FIRST NAME, and optionally MIDDLE INITIAL.
+        6. Return ONLY a JSON object with: accountName (UPPERCASE), kycLevel (integer 1-3), bvnLinked (boolean).
       `;
 
       const response = await ai.models.generateContent({
@@ -87,16 +87,31 @@ export const performNameEnquiry = async (accountNumber: string, bankCode: string
  * Used as a fallback when the live banking switch (AI) is unavailable.
  */
 const generateDeterministicName = (accountNumber: string, bankCode: string): AccountEnquiryResult => {
-  const surnames = ["OKOROAFOR", "ADEYEMI", "BABATUNDE", "OKONJO", "DANJUMA", "EZEKWESILI", "BALOGUN", "ADENIJI", "CHUKWUMA", "NWOSU"];
-  const firstNames = ["CHUKWUDI", "OLUWASEUN", "NGOZI", "IBRAHIM", "OLUMIDE", "CHINELO", "TUNDE", "FUNKE", "EMMANUEL", "AISHATU"];
+  const surnames = [
+    "OKOROAFOR", "ADEYEMI", "BABATUNDE", "OKONJO", "DANJUMA", 
+    "EZEKWESILI", "BALOGUN", "ADENIJI", "CHUKWUMA", "NWOSU",
+    "ABDU-SALAM", "OGUNDIPE", "IGWE", "OJO", "BELLO",
+    "IBRAHIM", "YUSUFU", "GARBA", "SULEIMAN", "MUSA",
+    "OLAOYE", "AKINYEMI", "OKAFOR"
+  ];
+  const firstNames = [
+    "CHUKWUDI", "OLUWASEUN", "NGOZI", "IBRAHIM", "OLUMIDE", 
+    "CHINELO", "TUNDE", "FUNKE", "EMMANUEL", "AISHATU",
+    "AHMED", "BOLAJI", "CHIOMA", "DAVID", "ESTHER",
+    "FAITH", "GRACE", "HASSAN", "ISAAC", "JOY",
+    "KEFTIN", "LATEEF", "MODUPE"
+  ];
   
-  const seed = parseInt(accountNumber.slice(-4)) || 0;
+  const midNames = ["O.", "A.", "C.", "E.", "F.", "J.", "K.", "M.", "S.", "T.", ""];
+  
+  const seed = parseInt(accountNumber.slice(-6)) || 0;
   const surname = surnames[seed % surnames.length];
   const firstName = firstNames[(seed + 7) % firstNames.length];
+  const mid = midNames[(seed + 13) % midNames.length];
   
   return {
     success: true,
-    accountName: `${surname} ${firstName}`,
+    accountName: `${surname} ${firstName}${mid ? ' ' + mid : ''}`,
     accountNumber,
     bankName: bankCode,
     kycLevel: (seed % 3) + 1,

@@ -165,15 +165,35 @@ const Marketplace: React.FC<MarketplaceProps> = ({ user, setUser, notify, proces
           <div className="w-full max-w-sm space-y-10 text-center">
             <div className="space-y-2">
               <h3 className="text-3xl font-black text-white italic tracking-tighter">Authorize Purchase</h3>
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enter your 4-digit PIN to buy ₦{purchaseAmount.toLocaleString()} Gift Card</p>
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                Enter {user.transactionPin ? 'your' : 'default'} 4-digit PIN to buy ₦{purchaseAmount.toLocaleString()} Gift Card
+                {!user.transactionPin && <span className="block text-blue-500 mt-1">Hint: Default is 1234</span>}
+              </p>
             </div>
 
             <div className="flex justify-center gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className={`w-14 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pin.length > i ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-700'}`}>
-                  {pin.length > i ? '●' : ''}
-                </div>
-              ))}
+              {[...Array(4)].map((_, i) => {
+                const isActive = pin.length === i;
+                const isFilled = pin.length > i;
+                return (
+                  <div 
+                    key={i} 
+                    className={`w-14 h-16 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
+                      isActive 
+                        ? 'border-blue-500 bg-blue-500/20 scale-110 shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
+                        : isFilled 
+                          ? 'border-white bg-white/20' 
+                          : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    {isFilled ? (
+                       <div className="w-4 h-4 bg-white rounded-full animate-in zoom-in duration-200" />
+                    ) : isActive ? (
+                       <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full" />
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="grid grid-cols-3 gap-4 max-w-[280px] mx-auto">

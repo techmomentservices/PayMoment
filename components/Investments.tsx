@@ -203,11 +203,28 @@ const Investments: React.FC<InvestmentsProps> = ({ user, setUser, notify, proces
             </div>
 
             <div className="flex justify-center gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className={`w-14 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pin.length > i ? 'border-blue-500 bg-blue-500/10 text-white' : 'border-white/10 bg-white/5 text-slate-700'}`}>
-                  {pin.length > i ? '●' : ''}
-                </div>
-              ))}
+              {[...Array(4)].map((_, i) => {
+                const isActive = pin.length === i;
+                const isFilled = pin.length > i;
+                return (
+                  <div 
+                    key={i} 
+                    className={`w-14 h-16 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
+                      isActive 
+                        ? 'border-blue-500 bg-blue-500/20 scale-110 shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
+                        : isFilled 
+                          ? 'border-white bg-white/20' 
+                          : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    {isFilled ? (
+                       <div className="w-4 h-4 bg-white rounded-full animate-in zoom-in duration-200" />
+                    ) : isActive ? (
+                       <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full" />
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="grid grid-cols-3 gap-4 max-w-[280px] mx-auto">

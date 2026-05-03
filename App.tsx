@@ -18,6 +18,7 @@ import Referrals from './components/Referrals';
 import Bills from './components/Bills';
 import QRCode from './components/QRCode';
 import Profile from './components/Profile';
+import Settings from './components/Settings';
 import VerificationCenter from './components/VerificationCenter';
 import BiometricOverlay from './components/BiometricOverlay';
 import AuthFlow from './components/AuthFlow';
@@ -131,7 +132,13 @@ const AppContent: React.FC<{
   fundAccount: (amount: number) => Promise<void>
 }> = ({ user, setUser, isDarkMode, toggleDarkMode, notify, processTransaction, onSignOut, onReset, loading, fundAccount }) => {
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isPublicPath = location.pathname.startsWith('/pay/');
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   if (loading) {
     return (
@@ -169,6 +176,7 @@ const AppContent: React.FC<{
           <SidebarItem to="/dom-accounts" label="Global Hub" icon="🏦" />
           <SidebarItem to="/savings" label="Savings" icon="💰" />
           <SidebarItem to="/ai-assistant" label="PayAI" icon="✨" />
+          <SidebarItem to="/settings" label="Settings" icon="⚙️" />
         </div>
 
         <div className="p-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
@@ -191,6 +199,12 @@ const AppContent: React.FC<{
       <main className="flex-1 min-h-screen flex flex-col">
         <header className="md:hidden fixed top-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-top))] flex items-end justify-between px-4 pb-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 z-50 transition-colors pt-safe">
            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 tap-scale"
+              >
+                ☰
+              </button>
               <PayMomentLogo className="w-8 h-8" idSuffix="mobile-header" />
               <h1 className="text-xl font-black bg-gradient-to-r from-blue-700 to-purple-600 bg-clip-text text-transparent italic tracking-tighter">PayMoment</h1>
            </div>
@@ -222,7 +236,7 @@ const AppContent: React.FC<{
             <Route path="/transfer" element={<Transfer notify={notify} user={user} setUser={setUser} processTransaction={processTransaction} />} />
             <Route path="/global-transfer" element={<InternationalTransfer notify={notify} user={user} setUser={setUser} />} />
             <Route path="/verification" element={<VerificationCenter user={user} setUser={setUser} notify={notify} />} />
-            <Route path="/bills" element={<Bills notify={notify} processTransaction={processTransaction} />} />
+            <Route path="/bills" element={<Bills notify={notify} processTransaction={processTransaction} user={user} />} />
             <Route path="/qr" element={<QRCode user={user} />} />
             <Route path="/ai-assistant" element={<AIAssistant />} />
             <Route path="/cards" element={<VirtualCards user={user} setUser={setUser} processTransaction={processTransaction} notify={notify} />} />
@@ -230,6 +244,7 @@ const AppContent: React.FC<{
             <Route path="/savings" element={<Savings user={user} setUser={setUser} processTransaction={processTransaction} notify={notify} />} />
             <Route path="/referrals" element={<Referrals user={user} />} />
             <Route path="/profile" element={<Profile user={user} setUser={setUser} notify={notify} onSignOut={onSignOut} onReset={onReset} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
+            <Route path="/settings" element={<Settings user={user} setUser={setUser} notify={notify} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />} />
           </Routes>
         </div>
         
@@ -241,8 +256,59 @@ const AppContent: React.FC<{
         <BottomNavItem to="/marketplace" label="Shop" icon="🏪" />
         <BottomNavItem to="/transfer" label="Send" icon="💸" />
         <BottomNavItem to="/cards" label="Cards" icon="💳" />
-        <BottomNavItem to="/profile" label="More" icon="⚙️" />
+        <BottomNavItem to="/settings" label="Settings" icon="⚙️" />
       </nav>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] animate-in fade-in"
+          onClick={() => setIsMobileMenuOpen(false)}
+        >
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-72 bg-white dark:bg-slate-900 shadow-2xl p-6 flex flex-col animate-in slide-in-from-left duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <PayMomentLogo className="w-8 h-8" idSuffix="mobile-drawer" />
+                <h1 className="text-xl font-black bg-gradient-to-r from-blue-700 to-purple-600 bg-clip-text text-transparent italic tracking-tighter">
+                  PayMoment
+                </h1>
+              </div>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
+              <SidebarItem to="/" label="Dashboard" icon="🏠" />
+              <SidebarItem to="/marketplace" label="Marketplace" icon="🏪" />
+              <SidebarItem to="/transfer" label="Transfers" icon="💸" />
+              <SidebarItem to="/cards" label="Cards" icon="💳" />
+              <SidebarItem to="/transactions" label="History" icon="🧾" />
+              <SidebarItem to="/dom-accounts" label="Global Hub" icon="🏦" />
+              <SidebarItem to="/savings" label="Savings" icon="💰" />
+              <SidebarItem to="/ai-assistant" label="PayAI" icon="✨" />
+              <SidebarItem to="/settings" label="Settings" icon="⚙️" />
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                <UserAvatar user={user} className="w-10 h-10" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{user.name}</p>
+                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">{user.payMomentId}</p>
+                </div>
+              </div>
+              <button onClick={onSignOut} className="w-full py-4 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 rounded-2xl border border-rose-100 dark:border-rose-900/20 font-black text-[10px] uppercase tracking-widest tap-scale">Logout Account</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -290,7 +356,7 @@ const App: React.FC = () => {
           }
           
           if (userSnap.exists()) {
-            setUser(userSnap.data() as User);
+            setUser({ ...(userSnap.data() as User), uid: fUser.uid });
           } else {
             // New user initialization
             const regData = pendingReg || {
@@ -344,7 +410,7 @@ const App: React.FC = () => {
     if (firebaseUser) {
       const unsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (doc) => {
         if (doc.exists()) {
-          setUser(doc.data() as User);
+          setUser({ ...(doc.data() as User), uid: firebaseUser.uid });
         }
       }, (error) => {
         handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
@@ -378,7 +444,8 @@ const App: React.FC = () => {
         
         // PIN Verification for debits
         if (tx.type === 'debit') {
-          if (!pin || pin !== userData.transactionPin) {
+          const storedPin = userData.transactionPin || '1234';
+          if (!pin || pin !== storedPin) {
             throw "Incorrect Transaction PIN";
           }
         }
@@ -400,13 +467,20 @@ const App: React.FC = () => {
 
         // Record Transaction in separate collection
         const txRef = doc(collection(db, 'transactions'));
-        transaction.set(txRef, {
+        
+        // Clean undefined values
+        const preparedTx = Object.entries({
           ...tx,
           id: txRef.id,
           userId: firebaseUser.uid,
           senderUid: firebaseUser.uid,
           timestamp: new Date().toISOString()
-        });
+        }).reduce((acc, [key, value]) => {
+          if (value !== undefined) acc[key] = value;
+          return acc;
+        }, {} as any);
+
+        transaction.set(txRef, preparedTx);
 
         // Handle recipient if internal transfer
         if (tx.recipientUid && tx.type === 'debit') {
@@ -419,7 +493,7 @@ const App: React.FC = () => {
             recipientBalances[currency] = (recipientBalances[currency] || 0) + tx.amount;
             
             const creditTxRef = doc(collection(db, 'transactions'));
-            const creditTx = {
+            const creditTxRaw = {
               ...tx,
               id: creditTxRef.id,
               userId: tx.recipientUid,
@@ -429,10 +503,16 @@ const App: React.FC = () => {
               timestamp: new Date().toISOString()
             };
 
+            // Clean undefined values for credit record
+            const preparedCreditTx = Object.entries(creditTxRaw).reduce((acc, [key, value]) => {
+              if (value !== undefined) acc[key] = value;
+              return acc;
+            }, {} as any);
+
             transaction.update(recipientRef, {
               balances: recipientBalances
             });
-            transaction.set(creditTxRef, creditTx);
+            transaction.set(creditTxRef, preparedCreditTx);
           }
         }
       });

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Transaction } from '../types';
+import { Transaction, User } from '../types';
 
 import { parseFirestoreError } from '../src/firebase';
 
@@ -9,6 +9,7 @@ import { parseFirestoreError } from '../src/firebase';
 interface BillsProps {
   notify: (msg: string, type?: 'success' | 'info' | 'error') => void;
   processTransaction: (tx: Transaction, currency: string, pin?: string) => Promise<void>;
+  user: User;
 }
 
 const CATEGORIES = [
@@ -27,7 +28,7 @@ const PROVIDERS: Record<string, string[]> = {
 };
 
 // Update component signature to accept props
-const Bills: React.FC<BillsProps> = ({ notify, processTransaction }) => {
+const Bills: React.FC<BillsProps> = ({ notify, processTransaction, user }) => {
   const navigate = useNavigate();
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [step, setStep] = useState<'selection' | 'form' | 'authorize' | 'success'>('selection');
@@ -186,15 +187,35 @@ const Bills: React.FC<BillsProps> = ({ notify, processTransaction }) => {
         <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 md:p-10 border border-slate-200 dark:border-slate-800 shadow-sm max-w-xl mx-auto space-y-8">
           <div className="text-center space-y-2">
             <h3 className="text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white">Authorize Payment</h3>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enter your 4-digit PIN to pay ₦{parseFloat(amount).toLocaleString()}</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
+              Enter {user.transactionPin ? 'your' : 'default'} 4-digit PIN to pay ₦{parseFloat(amount).toLocaleString()}
+              {!user.transactionPin && <span className="block text-blue-500 mt-1">Hint: Default is 1234</span>}
+            </p>
           </div>
           
           <div className="flex justify-center gap-4">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center text-2xl font-black ${pin.length > i ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-slate-200 bg-slate-50 text-slate-300'}`}>
-                {pin.length > i ? '●' : ''}
-              </div>
-            ))}
+            {[...Array(4)].map((_, i) => {
+              const isActive = pin.length === i;
+              const isFilled = pin.length > i;
+              return (
+                <div 
+                  key={i} 
+                  className={`w-12 h-16 rounded-2xl border-2 flex items-center justify-center transition-all duration-200 ${
+                    isActive 
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 shadow-[0_0_15px_rgba(37,99,235,0.2)]' 
+                      : isFilled 
+                        ? 'border-slate-400 dark:border-slate-500 bg-white dark:bg-slate-800' 
+                        : 'border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-white/5'
+                  }`}
+                >
+                  {isFilled ? (
+                    <div className="w-4 h-4 bg-slate-900 dark:bg-white rounded-full animate-in zoom-in duration-200" />
+                  ) : isActive ? (
+                    <div className="w-0.5 h-6 bg-blue-600 animate-pulse rounded-full" />
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
 
           <div className="grid grid-cols-3 gap-4 max-w-[280px] mx-auto">

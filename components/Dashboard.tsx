@@ -105,10 +105,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setUser, notify, processTra
           </div>
           <div className="min-w-0">
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-none mb-1">{greeting}</p>
-            <h3 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tight italic truncate">{user.name}</h3>
-            <button onClick={copyAccountNumber} className="mt-2 text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1">
-              {user.accountNumber} 📋
-            </button>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tight italic truncate">{user.name}</h3>
+              {user.verification.identityVerified && (
+                <span className="w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center text-[10px] shadow-sm animate-in zoom-in" title="Identity Verified">✓</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <button onClick={copyAccountNumber} className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest flex items-center gap-1 w-fit">
+                {user.accountNumber} 📋
+              </button>
+              {user.bankName && (
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest italic">Linked: {user.bankName}</p>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex gap-2 self-end sm:self-auto">
@@ -180,7 +190,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, setUser, notify, processTra
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${tx.type === 'credit' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-blue-400'}`}>{tx.type === 'credit' ? '↓' : '↑'}</div>
                   <div>
                     <p className="font-black text-slate-900 dark:text-white transition-colors italic tracking-tight">{tx.title}</p>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{tx.timestamp.split(',')[0]}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">{new Date(tx.timestamp).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}</p>
                   </div>
                 </div>
                 <p className={`text-lg font-black italic tracking-tighter ${tx.type === 'credit' ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>{tx.type === 'credit' ? '+' : '-'}₦{tx.amount.toLocaleString()}</p>

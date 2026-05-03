@@ -11,7 +11,9 @@ export const COLORS = {
 export const NIGERIAN_BANKS = [
   "Access Bank", "GTBank", "First Bank", "Zenith Bank", "UBA", 
   "Kuda Bank", "Moniepoint", "OPay", "PalmPay", "Stanbic IBTC", 
-  "Wema Bank", "Fidelity Bank", "Standard Chartered"
+  "Wema Bank", "Fidelity Bank", "Standard Chartered", "Sterling Bank",
+  "Union Bank", "Polaris Bank", "Keystone Bank", "Unity Bank", 
+  "Providus Bank", "FairMoney", "VFD Microfinance Bank"
 ];
 
 export const SAMPLE_TRANSACTIONS = [

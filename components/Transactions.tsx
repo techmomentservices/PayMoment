@@ -121,7 +121,7 @@ const Transactions: React.FC<TransactionsProps> = ({ user, setUser, notify }) =>
                     <p className="font-black text-slate-900 dark:text-white text-sm truncate max-w-[140px] xs:max-w-none">{tx.title}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[7px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 font-black uppercase tracking-widest">{tx.category}</span>
-                      <span className="text-[9px] text-slate-400 font-medium">{tx.timestamp.split(',')[0]}</span>
+                      <span className="text-[9px] text-slate-400 font-medium">{new Date(tx.timestamp).toLocaleDateString('en-NG', { day: '2-digit', month: 'short' })}</span>
                     </div>
                   </div>
                 </div>
@@ -139,7 +139,15 @@ const Transactions: React.FC<TransactionsProps> = ({ user, setUser, notify }) =>
            <div className="bg-white dark:bg-slate-900 rounded-t-[3rem] md:rounded-[4rem] w-full max-w-lg p-8 md:p-12 shadow-2xl animate-in slide-in-from-bottom-12 duration-500 max-h-[90vh] overflow-y-auto no-scrollbar">
               <div className="flex justify-between items-center mb-8"><h3 className="text-xl md:text-2xl font-black italic tracking-tighter text-slate-900 dark:text-white">Transaction Receipt</h3><button onClick={() => setSelectedTx(null)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 text-2xl">×</button></div>
               <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-[2.5rem] flex flex-col items-center gap-2 border border-slate-100 dark:border-slate-800"><p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Amount Settled</p><h5 className={`text-3xl md:text-4xl font-black tracking-tighter ${selectedTx.type === 'credit' ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>{selectedTx.type === 'credit' ? '+' : '-'}₦{selectedTx.amount.toLocaleString()}</h5></div>
-              <div className="space-y-4 py-8 border-b border-dashed border-slate-200 dark:border-slate-800"><ReceiptRow label="Sender" value={getSenderName(selectedTx)} /><ReceiptRow label="Destination" value={getRecipientAccount(selectedTx)} /><ReceiptRow label="Narration" value={selectedTx.remark || 'Moment Transfer'} /><ReceiptRow label="Reference" value={`PM-${selectedTx.id.toUpperCase()}`} /><ReceiptRow label="Status" value="SUCCESSFUL" /></div>
+              <div className="space-y-4 py-8 border-b border-dashed border-slate-200 dark:border-slate-800">
+                <ReceiptRow label="Sender" value={getSenderName(selectedTx)} />
+                <ReceiptRow label="Destination" value={getRecipientAccount(selectedTx)} />
+                {selectedTx.recipientBank && <ReceiptRow label="Recipient Bank" value={selectedTx.recipientBank} />}
+                <ReceiptRow label="Narration" value={selectedTx.remark || 'Moment Transfer'} />
+                <ReceiptRow label="Date & Time" value={new Date(selectedTx.timestamp).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })} />
+                <ReceiptRow label="Reference" value={`PM-${selectedTx.id.toUpperCase()}`} />
+                <ReceiptRow label="Status" value="SUCCESSFUL" />
+              </div>
               <button onClick={() => setSelectedTx(null)} className="w-full py-5 mt-8 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[10px] tap-scale">Close Receipt</button>
            </div>
         </div>

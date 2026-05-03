@@ -11,6 +11,7 @@ export interface Transaction {
   remark?: string; // New: Narration for the payment
   recipientUid?: string;
   senderUid?: string;
+  recipientBank?: string;
 }
 
 export interface DebtInfo {
@@ -27,6 +28,11 @@ export interface VerificationStatus {
   ninValue?: string;
   address: boolean;
   facialMatch: boolean;
+  fullName?: string;
+  dob?: string;
+  gender?: string;
+  stateOfOrigin?: string;
+  identityVerified?: boolean;
 }
 
 export interface PaymentLink {
@@ -109,6 +115,7 @@ export interface BudgetCategory {
 }
 
 export interface User {
+  uid?: string; // Firebase Document ID
   name: string;
   phoneNumber: string;
   profilePicture?: string;
@@ -123,11 +130,12 @@ export interface User {
   momentPoints: number;
   investments: Investment[];
   badges: Badge[];
-  debtInfo?: DebtInfo; // New: Tracking for wrong transfer resolution
-  transactionPin?: string; // Secure 4-digit PIN
+  debtInfo?: DebtInfo;
+  transactionPin?: string;
   cards?: CardData[];
   savings?: SavingGoal[];
-  budgetCategories?: BudgetCategory[]; // New: Custom budget categories for PayAI
+  budgetCategories?: BudgetCategory[];
+  bankName?: string;
 }
 
 export interface BillCategory {

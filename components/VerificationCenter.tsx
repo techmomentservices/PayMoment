@@ -98,21 +98,35 @@ const VerificationCenter: React.FC<VerificationCenterProps> = ({ user, setUser, 
     setLoading(true);
     try {
       const type = activeView as 'bvn' | 'nin';
-      const registryStr = localStorage.getItem(GLOBAL_KYC_KEY);
-      const registry: { bvn: string[], nin: string[] } = registryStr ? JSON.parse(registryStr) : { bvn: [], nin: [] };
+      let registry: { bvn: string[], nin: string[] } = { bvn: [], nin: [] };
+      
+      try {
+        const registryStr = localStorage.getItem(GLOBAL_KYC_KEY);
+        if (registryStr) {
+          registry = JSON.parse(registryStr);
+        }
+      } catch (e) {
+        console.error("KYC Registry parse error", e);
+      }
 
-      if (registry[type].includes(kycInputValue)) {
+      if (registry[type] && registry[type].includes(kycInputValue)) {
         notify(`This ${type.toUpperCase()} is already linked to another PayMoment account.`, "error");
         setLoading(false);
         return;
       }
 
+      if (!registry[type]) registry[type] = [];
       registry[type].push(kycInputValue);
       localStorage.setItem(GLOBAL_KYC_KEY, JSON.stringify(registry));
 
-      const updatedVerification = { 
+      const updatedVerification: any = { 
         ...user.verification,
-        [type]: true 
+        [type]: true,
+        fullName: verificationResult.fullName,
+        dob: verificationResult.dob,
+        gender: verificationResult.gender,
+        stateOfOrigin: verificationResult.stateOfOrigin,
+        identityVerified: true
       };
 
       if (type === 'bvn') {
@@ -125,18 +139,23 @@ const VerificationCenter: React.FC<VerificationCenterProps> = ({ user, setUser, 
       if (type === 'bvn' && !user.verification.nin) newTier = 1;
       if (type === 'nin') newTier = 2;
 
-      const userRef = doc(db, 'users', (user as any).uid || user.payMomentId); // Fallback if uid missing
+      // Use user.uid (the actual document ID from Auth)
+      const docId = user.uid || user.payMomentId;
+      const userRef = doc(db, 'users', docId); 
+      
       await updateDoc(userRef, {
         verification: updatedVerification,
         tier: newTier,
-        name: verificationResult.fullName || user.name // Update name to real name from registry
+        name: verificationResult.fullName || user.name,
+        bankName: (verificationResult as any).bankName || user.bankName || 'PayMoment Bank'
       });
 
       setUser({ 
         ...user, 
         verification: updatedVerification, 
         tier: newTier,
-        name: verificationResult.fullName || user.name 
+        name: verificationResult.fullName || user.name,
+        bankName: (verificationResult as any).bankName || user.bankName || 'PayMoment Bank'
       });
 
       setKycInputValue('');

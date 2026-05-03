@@ -132,21 +132,28 @@ const BiometricOverlay: React.FC<BiometricOverlayProps> = ({ onAuthenticated, is
           <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* NEW BOX-STYLE PIN DISPLAY FOR LOGIN */}
             <div className="flex justify-center gap-4" onClick={() => hiddenInputRef.current?.focus()}>
-              {[...Array(4)].map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-14 h-16 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
-                    pin.length === i ? 'border-blue-500 bg-blue-500/10 scale-110 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 
-                    pin.length > i ? 'border-white bg-white/10' : 'border-white/20 bg-white/5'
-                  }`}
-                >
-                  {pin.length > i ? (
-                     <span className="text-white text-3xl font-black">{pin[i]}</span>
-                  ) : pin.length === i ? (
-                     <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full"></div>
-                  ) : null}
-                </div>
-              ))}
+              {[...Array(4)].map((_, i) => {
+                const isActive = pin.length === i;
+                const isFilled = pin.length > i;
+                return (
+                  <div 
+                    key={i} 
+                    className={`w-14 h-18 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
+                      isActive 
+                        ? 'border-blue-500 bg-blue-500/20 scale-110 shadow-[0_0_20px_rgba(59,130,246,0.4)]' 
+                        : isFilled 
+                          ? 'border-white bg-white/20' 
+                          : 'border-white/10 bg-white/5'
+                    }`}
+                  >
+                    {isFilled ? (
+                       <div className="w-4 h-4 bg-white rounded-full animate-in zoom-in duration-200" />
+                    ) : isActive ? (
+                       <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full" />
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
 
             <input 

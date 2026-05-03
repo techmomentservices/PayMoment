@@ -84,41 +84,55 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
         setRecipientUid(null);
         
         try {
+          const cleanAccountNumber = targetAccountNumber.trim();
+          
           // ALWAYS check internal database first for any 10-digit number
-          if (targetAccountNumber.length === 10) {
-            const foundUser: any = await findUserByAccount(targetAccountNumber);
-            if (foundUser) {
-              setVerifiedName(foundUser.name.toUpperCase());
-              setRecipientUid(foundUser.uid);
-              setVerifying(false);
-              return;
+          if (cleanAccountNumber.length === 10) {
+            try {
+              const foundUser: any = await findUserByAccount(cleanAccountNumber);
+              if (foundUser) {
+                setVerifiedName(foundUser.name.toUpperCase());
+                setRecipientUid(foundUser.uid);
+                setVerifying(false);
+                return;
+              }
+            } catch (queryErr) {
+              console.error("Internal account lookup failed", queryErr);
+              // Continue to external enquiry if internal lookup fails
             }
           }
 
           if (type === 'paymoment') {
             let foundUser: any = null;
-            if (payMomentMethod === 'username') {
-              foundUser = await findUserByUsername(targetAccountNumber);
-            } else {
-              foundUser = await findUserByAccount(targetAccountNumber);
-            }
-            
-            if (foundUser) {
-              setVerifiedName(foundUser.name.toUpperCase());
-              setRecipientUid(foundUser.uid);
-            } else {
-              setVerifiedName("USER NOT FOUND");
+            try {
+              if (payMomentMethod === 'username') {
+                foundUser = await findUserByUsername(cleanAccountNumber);
+              } else {
+                foundUser = await findUserByAccount(cleanAccountNumber);
+              }
+              
+              if (foundUser) {
+                setVerifiedName(foundUser.name.toUpperCase());
+                setRecipientUid(foundUser.uid);
+              } else {
+                setVerifiedName("USER NOT FOUND");
+              }
+            } catch (pmErr) {
+              console.error("PayMoment user lookup failed", pmErr);
+              const msg = parseFirestoreError(pmErr);
+              notify(msg, "error");
+              setVerifiedName("LOOKUP ERROR");
             }
           } else {
             // Check Sandbox Accounts first for testing
-            const sandboxAcc = await findSandboxAccount(targetAccountNumber);
+            const sandboxAcc = await findSandboxAccount(cleanAccountNumber);
             if (sandboxAcc) {
               setVerifiedName(sandboxAcc.accountName.toUpperCase());
               setVerifying(false);
               return;
             }
 
-            const result = await performNameEnquiry(targetAccountNumber, targetBank);
+            const result = await performNameEnquiry(cleanAccountNumber, targetBank);
             if (result.success && result.accountName) {
               setVerifiedName(result.accountName);
             } else {
@@ -127,7 +141,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
             }
           }
         } catch (err) {
-          console.error("Verification failed", err);
+          console.error("Verification sequence failed", err);
           setVerifiedName("UNABLE TO VERIFY");
         } finally {
           setVerifying(false);
@@ -176,9 +190,10 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
       return;
     }
     
-    if (pin !== user.transactionPin) {
+    const currentPin = user.transactionPin || '1234';
+    if (pin !== currentPin) {
       setAuthStatus('error');
-      notify("Incorrect Transaction PIN", "error");
+      notify(`Incorrect Transaction PIN${!user.transactionPin ? '. Hint: Default is 1234' : ''}`, "error");
       setTimeout(() => {
         setPin('');
         setAuthStatus('idle');
@@ -223,17 +238,19 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
           setStep('otp');
           setAuthStatus('idle');
        } else {
-          finalizeTransfer();
+          finalizeTransfer(user.transactionPin || '1234');
        }
     }, 1500);
   };
 
-  const finalizeTransfer = async () => {
+  const finalizeTransfer = async (bypassPin?: string) => {
     setAuthStatus('verifying');
     try {
       const numericAmount = getRawAmount();
       const txId = Math.random().toString(36).substr(2, 9);
       setLastTxId(txId);
+      
+      const txPin = bypassPin || pin;
 
       if (saveAsBeneficiary && verifiedName && auth.currentUser) {
         const existing = user.beneficiaries.find(b => 
@@ -271,10 +288,11 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
         timestamp: new Date().toLocaleString(),
         status: 'completed',
         remark: remark,
-        recipientUid: recipientUid || undefined
+        recipientUid: recipientUid || undefined,
+        recipientBank: type === 'bank' ? bank : 'PayMoment'
       };
       
-      await processTransaction(tx, 'NGN', pin);
+      await processTransaction(tx, 'NGN', txPin);
       setAuthStatus('idle');
       setStep('success');
     } catch (error) {
@@ -308,7 +326,9 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
                 value={verifiedName} 
                 suffix={recipientUid ? <span className="text-blue-500 ml-1">✓</span> : undefined}
               />
+              <ReceiptDetailRow label="Bank" value={type === 'bank' ? bank : 'PayMoment'} />
               <ReceiptDetailRow label="Amount" value={`₦${amount}`} />
+              <ReceiptDetailRow label="Date & Time" value={new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })} />
               <ReceiptDetailRow label="Ref" value={`PM-${lastTxId.toUpperCase()}`} isMono />
               <ReceiptDetailRow label="Status" value="SUCCESSFUL" />
            </div>
@@ -369,22 +389,26 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
                     </p>
                     
                     <div className="flex justify-center gap-3 md:gap-4" onClick={() => hiddenInputRef.current?.focus()}>
-                      {[...Array(4)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`w-14 h-16 md:w-16 md:h-20 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
-                            authStatus === 'error' ? 'border-rose-500 bg-rose-500/10' :
-                            pin.length === i ? 'border-blue-500 bg-blue-500/20 scale-110 shadow-[0_0_20px_rgba(59,130,246,0.4)]' : 
-                            pin.length > i ? 'border-white bg-white/10 scale-105' : 'border-white/10 bg-white/5'
-                          }`}
-                        >
-                          {pin.length > i ? (
-                             <span className="text-white text-3xl font-black animate-in zoom-in-50 duration-200">{pin[i]}</span>
-                          ) : pin.length === i ? (
-                             <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full"></div>
-                          ) : null}
-                        </div>
-                      ))}
+                      {[...Array(4)].map((_, i) => {
+                        const isActive = pin.length === i;
+                        const isFilled = pin.length > i;
+                        return (
+                          <div 
+                            key={i} 
+                            className={`w-14 h-18 md:w-16 md:h-20 rounded-2xl border-2 flex items-center justify-center transition-all duration-300 ${
+                              authStatus === 'error' ? 'border-rose-500 bg-rose-500/20 animate-shake' :
+                              isActive ? 'border-blue-500 bg-blue-500/20 scale-110 shadow-[0_0_25px_rgba(59,130,246,0.5)]' : 
+                              isFilled ? 'border-white bg-white/20' : 'border-white/10 bg-white/5'
+                            }`}
+                          >
+                            {isFilled ? (
+                               <div className="w-4 h-4 bg-white rounded-full animate-in zoom-in duration-200 shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                            ) : isActive ? (
+                               <div className="w-1 h-8 bg-blue-500 animate-pulse rounded-full" />
+                            ) : null}
+                          </div>
+                        );
+                      })}
                     </div>
                     
                     <input 

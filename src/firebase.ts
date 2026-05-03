@@ -34,27 +34,19 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from 'firebase/firestore';
-// Use environment variables or dummy values if config is missing
-const firebaseConfig = {
-  apiKey: "dummy-key",
-  authDomain: "dummy-auth",
-  projectId: "dummy-project",
-  storageBucket: "dummy-storage",
-  messagingSenderId: "dummy-sender",
-  appId: "dummy-app",
-  firestoreDatabaseId: "(default)"
-};
+// Use the auto-generated Firebase configuration from the platform
+import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with settings that are more resilient to network issues
+// Initialize Firestore
 export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager()
   }),
-  experimentalForceLongPolling: true // Bypasses WebSocket blocks in some environments
-}, firebaseConfig.firestoreDatabaseId || '(default)');
+  experimentalForceLongPolling: true 
+}, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Auth
 export const auth = getAuth(app);
@@ -210,7 +202,7 @@ export const findUserByAccount = async (accountNumber: string) => {
       return { ...doc.data(), uid: doc.id };
     }
   } catch (error) {
-    console.error("Error finding user by account:", error);
+    handleFirestoreError(error, OperationType.LIST, 'users');
   }
   return null;
 };
@@ -224,7 +216,7 @@ export const findUserByUsername = async (username: string) => {
       return { ...doc.data(), uid: doc.id };
     }
   } catch (error) {
-    console.error("Error finding user by username:", error);
+    handleFirestoreError(error, OperationType.LIST, 'users');
   }
   return null;
 };
@@ -237,7 +229,7 @@ export const findSandboxAccount = async (accountNumber: string) => {
       return querySnapshot.docs[0].data();
     }
   } catch (error) {
-    console.error("Error finding sandbox account:", error);
+    handleFirestoreError(error, OperationType.LIST, 'sandbox_accounts');
   }
   return null;
 };

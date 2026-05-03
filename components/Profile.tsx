@@ -114,7 +114,7 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, notify, onSignOut, onR
       setUser({ ...user, transactionPin: newPin });
       setShowPinSetup(false);
       setNewPin('');
-      notify("Transaction PIN updated successfully!", "success");
+      notify("PIN updated successfully! Use it to authorize transactions.", "success");
     } catch (err) {
       console.error("Failed to update PIN", err);
       notify("Failed to update PIN", "error");
@@ -192,6 +192,9 @@ const Profile: React.FC<ProfileProps> = ({ user, setUser, notify, onSignOut, onR
            ) : (
              <div className="group flex items-center justify-center gap-2">
                <h2 className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter">{user.name}</h2>
+               {user.verification.identityVerified && (
+                 <span className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-[11px] shadow-sm animate-in zoom-in" title="Identity Verified">✓</span>
+               )}
                <button 
                  onClick={() => setIsEditingName(true)}
                  className="p-2 text-slate-400 hover:text-blue-600 transition-colors opacity-0 group-hover:opacity-100"
