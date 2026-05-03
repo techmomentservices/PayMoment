@@ -173,17 +173,34 @@ const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify
       <div className="bg-white dark:bg-slate-900 rounded-[3.5rem] p-8 md:p-10 border border-slate-200 dark:border-slate-800 shadow-xl space-y-8">
         <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-[2.5rem] space-y-6 border border-slate-100 dark:border-slate-700">
            <div className="flex justify-between items-center px-1">
-              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Global Wallet</span>
+              <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Amount to Convert</span>
               <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-lg">{fromCurrency}: {currentBalance.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
            </div>
-           <div className="flex items-center gap-6">
-              <select value={fromCurrency} onChange={(e) => setFromCurrency(e.target.value as any)} className="bg-white dark:bg-slate-900 px-6 py-4 rounded-2xl border-2 border-slate-200 dark:border-slate-800 font-black text-sm text-slate-900 dark:text-white appearance-none pr-10 focus:border-blue-600 outline-none">
+           <div className="flex items-center gap-6 bg-white dark:bg-slate-900 p-4 rounded-3xl border-2 border-slate-200 dark:border-slate-800 focus-within:border-blue-600 transition-all shadow-inner">
+              <select value={fromCurrency} onChange={(e) => setFromCurrency(e.target.value as any)} className="bg-slate-50 dark:bg-slate-800 px-4 py-3 rounded-2xl font-black text-sm text-slate-900 dark:text-white appearance-none pr-8 outline-none hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
                   <option value="USD">🇺🇸 USD</option>
                   <option value="GBP">🇬🇧 GBP</option>
               </select>
-              <input type="text" value={amount} onChange={(e) => handleAmountChange(e.target.value)} placeholder="0.00" className="flex-1 bg-transparent text-4xl font-black text-right outline-none text-slate-900 dark:text-white placeholder:text-slate-200 dark:placeholder:text-slate-800 tabular-nums" />
+              <input 
+                type="text" 
+                value={amount} 
+                onChange={(e) => handleAmountChange(e.target.value)} 
+                placeholder="0.00" 
+                className="flex-1 bg-transparent text-4xl font-black text-right outline-none text-slate-900 dark:text-white placeholder:text-slate-200 dark:placeholder:text-slate-800 tabular-nums" 
+              />
            </div>
-        </div>
+           <div className="flex gap-2 pt-2">
+               {[0.5, 1].map((p) => (
+                 <button 
+                   key={p} 
+                   onClick={() => handleAmountChange((currentBalance * p).toString())} 
+                   className="px-4 py-2 bg-white dark:bg-slate-900 hover:bg-blue-600 hover:text-white text-[10px] font-black rounded-xl border border-slate-200 dark:border-slate-800 transition-all uppercase"
+                 >
+                   {p === 1 ? 'Max' : '50% Half'}
+                 </button>
+               ))}
+            </div>
+         </div>
         <div className="flex justify-center -my-10 relative z-10"><div className="w-14 h-14 bg-white dark:bg-slate-900 border-4 border-slate-50 dark:border-slate-950 rounded-full flex items-center justify-center text-2xl shadow-xl dark:text-white">↓</div></div>
         <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/10 dark:to-emerald-950/10 p-8 rounded-[2.5rem] border border-emerald-200 dark:border-emerald-800/30 space-y-4">
            <div className="flex justify-between items-center px-1"><span className="text-[10px] font-black text-emerald-700 dark:text-emerald-500 uppercase tracking-widest">Naira Value</span></div>

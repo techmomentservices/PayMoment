@@ -2,7 +2,7 @@
 // App Entry Point - Integrated with Firebase for Real-time Data
 import React, { useState, useEffect, useCallback } from 'react';
 import { HashRouter, Routes, Route, NavLink, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { onAuthStateChanged, auth, db, signOut, FirebaseUser, handleFirestoreError, OperationType, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, parseAuthError } from './src/firebase';
+import { onAuthStateChanged, auth, db, signOut, FirebaseUser, handleFirestoreError, OperationType, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword, parseAuthError, parseFirestoreError } from './src/firebase';
 import { doc, onSnapshot, setDoc, getDoc, updateDoc, collection, query, orderBy, limit, runTransaction } from 'firebase/firestore';
 import Dashboard from './components/Dashboard';
 import AIAssistant from './components/AIAssistant';
@@ -596,6 +596,8 @@ const App: React.FC = () => {
         notify(error, "error");
         throw error;
       } else {
+        const msg = parseFirestoreError(error);
+        notify(msg, "error");
         handleFirestoreError(error, OperationType.UPDATE, `users/${firebaseUser.uid}`);
         throw error;
       }
