@@ -126,11 +126,12 @@ const AppContent: React.FC<{
   toggleDarkMode: () => void,
   notify: (msg: string, type?: 'success' | 'info' | 'error') => void,
   processTransaction: (tx: Transaction, currency: string, pin?: string) => Promise<void>,
+  processExchange: (debitTx: Transaction, creditTx: Transaction, fromCurrency: string, toCurrency: string, pin?: string) => Promise<void>,
   onSignOut: () => void,
   onReset: () => void,
   loading: boolean,
   fundAccount: (amount: number) => Promise<void>
-}> = ({ user, setUser, isDarkMode, toggleDarkMode, notify, processTransaction, onSignOut, onReset, loading, fundAccount }) => {
+}> = ({ user, setUser, isDarkMode, toggleDarkMode, notify, processTransaction, processExchange, onSignOut, onReset, loading, fundAccount }) => {
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isPublicPath = location.pathname.startsWith('/pay/');
@@ -232,7 +233,8 @@ const AppContent: React.FC<{
             <Route path="/account-details" element={<AccountDetails user={user} notify={notify} />} />
             <Route path="/receive-global" element={<ReceiveGlobal user={user} setUser={setUser} notify={notify} />} />
             <Route path="/dom-accounts" element={<DomiciliaryAccounts user={user} setUser={setUser} notify={notify} />} />
-            <Route path="/swap" element={<CurrencySwap user={user} setUser={setUser} notify={notify} />} />
+            <Route path="/withdraw-to-naira" element={<WithdrawToNaira user={user} setUser={setUser} notify={notify} processExchange={processExchange} />} />
+            <Route path="/swap" element={<CurrencySwap user={user} setUser={setUser} notify={notify} processExchange={processExchange} />} />
             <Route path="/transfer" element={<Transfer notify={notify} user={user} setUser={setUser} processTransaction={processTransaction} />} />
             <Route path="/global-transfer" element={<InternationalTransfer notify={notify} user={user} setUser={setUser} />} />
             <Route path="/verification" element={<VerificationCenter user={user} setUser={setUser} notify={notify} />} />
@@ -529,6 +531,77 @@ const App: React.FC = () => {
     }
   }, [firebaseUser, notify]);
 
+  const processExchange = useCallback(async (
+    debitTx: Transaction, 
+    creditTx: Transaction, 
+    fromCurrency: string, 
+    toCurrency: string, 
+    pin?: string
+  ) => {
+    if (!firebaseUser) throw new Error("Authentication required");
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userRef = doc(db, 'users', firebaseUser.uid);
+        const userSnap = await transaction.get(userRef);
+        if (!userSnap.exists()) throw "User does not exist!";
+
+        const userData = userSnap.data() as User;
+        
+        // PIN Verification
+        const storedPin = userData.transactionPin || '1234';
+        if (!pin || pin !== storedPin) {
+          throw "Incorrect Transaction PIN";
+        }
+
+        const updatedBalances = { ...userData.balances };
+        
+        // Debit
+        if (updatedBalances[fromCurrency] < debitTx.amount) throw `Insufficient ${fromCurrency} balance`;
+        updatedBalances[fromCurrency] -= debitTx.amount;
+        
+        // Credit
+        updatedBalances[toCurrency] = (updatedBalances[toCurrency] || 0) + creditTx.amount;
+
+        // Update User
+        transaction.update(userRef, {
+          balances: updatedBalances,
+          momentPoints: userData.momentPoints + Math.floor(creditTx.amount / 1000)
+        });
+
+        // Record Debit Transaction
+        const debitTxRef = doc(collection(db, 'transactions'));
+        transaction.set(debitTxRef, {
+          ...debitTx,
+          id: debitTxRef.id,
+          userId: firebaseUser.uid,
+          senderUid: firebaseUser.uid,
+          timestamp: new Date().toISOString()
+        });
+
+        // Record Credit Transaction
+        const creditTxRef = doc(collection(db, 'transactions'));
+        transaction.set(creditTxRef, {
+          ...creditTx,
+          id: creditTxRef.id,
+          userId: firebaseUser.uid,
+          senderUid: firebaseUser.uid,
+          timestamp: new Date().toISOString()
+        });
+      });
+      notify("Exchange successful", "success");
+    } catch (error) {
+      console.error("Exchange failed:", error);
+      if (typeof error === 'string') {
+        notify(error, "error");
+        throw error;
+      } else {
+        handleFirestoreError(error, OperationType.UPDATE, `users/${firebaseUser.uid}`);
+        throw error;
+      }
+    }
+  }, [firebaseUser, notify]);
+
   const fundAccount = useCallback(async (amount: number) => {
     if (!firebaseUser) return;
     const tx: Transaction = {
@@ -622,6 +695,7 @@ const App: React.FC = () => {
             toggleDarkMode={() => setIsDarkMode(!isDarkMode)} 
             notify={notify} 
             processTransaction={processTransaction}
+            processExchange={processExchange}
             onSignOut={handleSignOut}
             onReset={handleReset}
             loading={loading}

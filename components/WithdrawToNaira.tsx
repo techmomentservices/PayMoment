@@ -7,6 +7,7 @@ interface WithdrawToNairaProps {
   user: User;
   setUser: React.Dispatch<React.SetStateAction<User>>;
   notify: (msg: string, type?: 'success' | 'info' | 'error') => void;
+  processExchange: (debitTx: Transaction, creditTx: Transaction, fromCurrency: string, toCurrency: string, pin?: string) => Promise<void>;
 }
 
 const EXCHANGE_RATES: Record<string, number> = {
@@ -14,7 +15,7 @@ const EXCHANGE_RATES: Record<string, number> = {
   GBP: 2150.00
 };
 
-const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify }) => {
+const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify, processExchange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -23,7 +24,8 @@ const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify
   const [fromCurrency, setFromCurrency] = useState<'USD' | 'GBP'>(initialCurrency);
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState<'form' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'pin' | 'success'>('form');
+  const [pin, setPin] = useState('');
 
   const currentBalance = user.balances[fromCurrency] || 0;
   const currentRate = EXCHANGE_RATES[fromCurrency];
@@ -50,7 +52,7 @@ const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify
     return val * currentRate;
   }, [amount, currentRate]);
 
-  const handleWithdraw = () => {
+  const handleWithdrawInitiate = () => {
     const val = getRawAmount();
     if (isNaN(val) || val <= 0) {
       notify("Please enter a valid amount to convert.", "error");
@@ -60,32 +62,87 @@ const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify
       notify(`Insufficient ${fromCurrency} balance.`, 'error');
       return;
     }
+    setStep('pin');
+  };
 
+  const handleWithdrawConfirm = async () => {
+    if (pin.length < 4) {
+      notify("Please enter your 4-digit PIN", "error");
+      return;
+    }
+
+    const val = getRawAmount();
     setIsProcessing(true);
-    setTimeout(() => {
+    
+    try {
       const symbol = fromCurrency === 'USD' ? '$' : '£';
-      const tx: Transaction = {
-        id: Math.random().toString(36).substr(2, 9),
-        type: 'credit',
-        amount: estimatedNaira,
-        title: `Liquidation: ${symbol}${amount} to NGN`,
+      
+      const debitTx: Transaction = {
+        id: `debit-${Date.now()}`,
+        type: 'debit',
+        amount: val,
+        title: `Liquidation: ${symbol}${amount} to Naira`,
         category: 'Exchange',
-        timestamp: new Date().toLocaleString(),
-        status: 'completed'
+        timestamp: new Date().toISOString(),
+        status: 'completed',
+        senderAccountNumber: user.accountNumber,
+        recipientAccountNumber: user.accountNumber
       };
 
-      setUser(prev => {
-        const updatedBalances = { ...prev.balances };
-        updatedBalances[fromCurrency] = (updatedBalances[fromCurrency] || 0) - val;
-        updatedBalances['NGN'] = (updatedBalances['NGN'] || 0) + estimatedNaira;
-        return { ...prev, balances: updatedBalances, transactions: [tx, ...prev.transactions] };
-      });
+      const creditTx: Transaction = {
+        id: `credit-${Date.now()}`,
+        type: 'credit',
+        amount: estimatedNaira,
+        title: `Liquidation: ${symbol}${amount} to Naira`,
+        category: 'Exchange',
+        timestamp: new Date().toISOString(),
+        status: 'completed',
+        senderAccountNumber: user.accountNumber,
+        recipientAccountNumber: user.accountNumber
+      };
 
-      setIsProcessing(false);
+      await processExchange(debitTx, creditTx, fromCurrency, 'NGN', pin);
+      
       setStep('success');
       notify(`Successfully converted ${symbol}${amount} to ₦${estimatedNaira.toLocaleString()}`, 'success');
-    }, 2000);
+    } catch (err: any) {
+      console.error(err);
+      // Notifications handled by processExchange
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  if (step === 'pin') {
+    return (
+      <div className="max-w-md mx-auto py-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white leading-none">Security Required</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Enter your transaction PIN to authorize this conversion.</p>
+        </div>
+        <div className="relative max-w-[240px] mx-auto">
+          <input 
+            type="password" 
+            maxLength={4}
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ''))}
+            className="w-full text-center text-4xl font-black tracking-[1em] py-6 bg-slate-100 dark:bg-slate-800 rounded-3xl border-2 border-transparent focus:border-blue-600 outline-none transition-all dark:text-white"
+            autoFocus
+          />
+        </div>
+        <div className="flex gap-4">
+          <button onClick={() => setStep('form')} className="flex-1 py-5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black uppercase tracking-widest text-[10px] tap-scale">Cancel</button>
+          <button 
+            onClick={handleWithdrawConfirm} 
+            disabled={pin.length < 4 || isProcessing}
+            className={`flex-[2] py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] tap-scale shadow-xl text-white ${isProcessing ? 'bg-slate-400' : 'bg-blue-600'}`}
+          >
+            {isProcessing ? 'Verifying...' : 'Confirm Conversion'}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (step === 'success') {
     return (
@@ -135,7 +192,7 @@ const WithdrawToNaira: React.FC<WithdrawToNairaProps> = ({ user, setUser, notify
               <div className="flex-1 text-4xl font-black text-right text-emerald-700 dark:text-emerald-400 tracking-tighter tabular-nums leading-none">₦{estimatedNaira.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
            </div>
         </div>
-        <button onClick={handleWithdraw} disabled={!amount || isProcessing} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 text-xs ${isProcessing ? 'bg-slate-400' : 'bg-gradient-to-r from-blue-700 to-purple-600'}`}>{isProcessing ? 'Processing...' : 'Convert Now'}</button>
+        <button onClick={handleWithdrawInitiate} disabled={!amount || isProcessing} className={`w-full py-6 rounded-[2rem] font-black uppercase tracking-[0.2em] text-white shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-4 text-xs ${isProcessing ? 'bg-slate-400' : 'bg-gradient-to-r from-blue-700 to-purple-600'}`}>{isProcessing ? 'Processing...' : 'Convert Now'}</button>
       </div>
     </div>
   );
