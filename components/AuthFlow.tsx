@@ -29,13 +29,20 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onRegister, onSignIn, isDarkMode })
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
+    
+    // Check if we are in an iframe which can cause auth issues
+    const isInIframe = window.self !== window.top;
+    
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: any) {
       console.error("Login failed", err);
       const parsed = parseAuthError(err);
-      if (parsed.includes('check your credentials') || parsed.includes('invalid-credential')) {
-        setError(parsed + " Tip: If Google login fails, try opening this app in a new tab using the icon at the top right.");
+      
+      if (parsed.includes('authorized') || parsed.includes('unauthorized-domain')) {
+        setError(parsed + "\n\nTo fix this permanently, add the current domain to your Firebase Console > Authentication > Settings > Authorized domains.");
+      } else if (isInIframe && (parsed.includes('Connectivity') || parsed.includes('network-request-failed') || parsed.includes('closed'))) {
+        setError(parsed + " Tip: You are in a preview! Open in New Tab using the icon above to allow Google login popups.");
       } else {
         setError(parsed);
       }
@@ -47,13 +54,20 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onRegister, onSignIn, isDarkMode })
   const handleGithubLogin = async () => {
     setLoading(true);
     setError('');
+    const isInIframe = window.self !== window.top;
+    
     try {
       await signInWithPopup(auth, githubProvider);
     } catch (err: any) {
       console.error("GitHub Login failed", err);
       const parsed = parseAuthError(err);
-      if (parsed.includes('Connectivity') || parsed.includes('operation-not-allowed')) {
-        setError(parsed + " Note: GitHub login must be enabled in your Firebase console and this app must be opened in a new tab.");
+      
+      if (parsed.includes('authorized') || parsed.includes('unauthorized-domain')) {
+        setError(parsed + "\n\nTo fix this: Add this domain to your Authorized domains in Firebase Console.");
+      } else if (isInIframe && (parsed.includes('Connectivity') || parsed.includes('network-request-failed') || parsed.includes('closed'))) {
+        setError(parsed + " Tip: Please use the 'Open in New Tab' button to use GitHub Login.");
+      } else if (parsed.includes('Connectivity') || parsed.includes('operation-not-allowed')) {
+        setError(parsed + " Note: GitHub login must be enabled in your Firebase console.");
       } else {
         setError(parsed);
       }
