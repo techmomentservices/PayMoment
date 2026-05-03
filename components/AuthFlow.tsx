@@ -38,11 +38,12 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onRegister, onSignIn, isDarkMode })
     } catch (err: any) {
       console.error("Login failed", err);
       const parsed = parseAuthError(err);
+      const currentDomain = window.location.hostname;
       
       if (parsed.includes('authorized') || parsed.includes('unauthorized-domain')) {
-        setError(parsed + "\n\nTo fix this permanently, add the current domain to your Firebase Console > Authentication > Settings > Authorized domains.");
-      } else if (isInIframe && (parsed.includes('Connectivity') || parsed.includes('network-request-failed') || parsed.includes('closed'))) {
-        setError(parsed + " Tip: You are in a preview! Open in New Tab using the icon above to allow Google login popups.");
+        setError(parsed + `\n\nTo fix this: Go to your Firebase Console > Authentication > Settings > Authorized domains and ADD: ${currentDomain}`);
+      } else if (isInIframe && (parsed.includes('network-request-failed') || parsed.includes('Connectivity') || parsed.includes('closed'))) {
+        setError("Network error: Browsers often block login popups in the preview window. Please click the 'Open in New Tab' icon at the top right to log in successfully.");
       } else {
         setError(parsed);
       }
@@ -61,9 +62,10 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onRegister, onSignIn, isDarkMode })
     } catch (err: any) {
       console.error("GitHub Login failed", err);
       const parsed = parseAuthError(err);
+      const currentDomain = window.location.hostname;
       
       if (parsed.includes('authorized') || parsed.includes('unauthorized-domain')) {
-        setError(parsed + "\n\nTo fix this: Add this domain to your Authorized domains in Firebase Console.");
+        setError(parsed + `\n\nTo fix this: Go to your Firebase Console > Authentication > Settings > Authorized domains and ADD: ${currentDomain}`);
       } else if (isInIframe && (parsed.includes('Connectivity') || parsed.includes('network-request-failed') || parsed.includes('closed'))) {
         setError(parsed + " Tip: Please use the 'Open in New Tab' button to use GitHub Login.");
       } else if (parsed.includes('Connectivity') || parsed.includes('operation-not-allowed')) {
@@ -293,17 +295,54 @@ const AuthFlow: React.FC<AuthFlowProps> = ({ onRegister, onSignIn, isDarkMode })
 
           <div className="w-full max-w-md space-y-6 bg-white/5 p-8 md:p-10 rounded-[3rem] border border-white/10 backdrop-blur-xl animate-in fade-in slide-in-from-right-10 duration-700 shadow-2xl relative overflow-hidden">
             {error && (
-              <div className="space-y-4">
-                <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs font-bold leading-relaxed">
-                  {error}
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className={`p-5 rounded-[1.5rem] border font-bold text-sm leading-relaxed ${
+                  error.includes('authorized') || error.includes('unauthorized') 
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' 
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                }`}>
+                  {error.split('\n\n').map((line, i) => (
+                    <p key={i} className={i > 0 ? "mt-3 text-xs opacity-90" : ""}>{line}</p>
+                  ))}
                 </div>
-                {(error.includes('Connectivity') || error.includes('Tab')) && (
-                  <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl space-y-2">
+                
+                {(error.includes('authorized') || error.includes('unauthorized')) && (
+                  <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-[1.5rem] space-y-3">
+                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>
+                      Required Setup Step
+                    </p>
+                    <p className="text-[11px] text-slate-300 font-medium">
+                      Firebase requires you to whitelist this preview domain.
+                    </p>
+                    <div className="p-3 bg-slate-900/50 rounded-xl border border-white/5 font-mono text-[10px] text-white break-all flex items-center justify-between gap-3 group">
+                      <code>{window.location.hostname}</code>
+                      <button 
+                        onClick={() => {
+                          const hostname = window.location.hostname;
+                          navigator.clipboard.writeText(hostname).then(() => {
+                            const btn = document.activeElement as HTMLButtonElement;
+                            if (btn) {
+                              const originalText = btn.innerText;
+                              btn.innerText = "COPIED!";
+                              setTimeout(() => { if (btn) btn.innerText = originalText; }, 2000);
+                            }
+                          });
+                        }}
+                        className="px-2 py-1 bg-blue-600 rounded-md text-[9px] font-black hover:bg-blue-500 transition-colors shrink-0"
+                      >
+                        COPY
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {(error.includes('Connectivity') || error.includes('Tab') || error.includes('Network Error')) && !error.includes('authorized') && (
+                  <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-[1.5rem] space-y-3">
                     <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest">Connectivity Help:</p>
-                    <ul className="text-[10px] text-slate-400 space-y-1 ml-4 list-disc font-medium">
-                      <li>Use the <span className="text-white font-bold">"Open in New Tab"</span> icon at the top right of this preview.</li>
-                      <li>Check if <span className="text-white font-bold">Third-Party Cookies</span> are blocked in your browser.</li>
-                      <li className="text-blue-300 font-bold">Tip: If you're trying to export/upload to GitHub, I've added a .gitignore to optimize your project.</li>
+                    <ul className="text-[11px] text-slate-400 space-y-2 ml-4 list-disc font-medium">
+                      <li>Use the <span className="text-white font-bold italic">"Open in New Tab"</span> icon at the top right of this preview window.</li>
+                      <li>Check if <span className="text-white font-bold">Third-Party Cookies</span> are allowed in your browser settings.</li>
                     </ul>
                   </div>
                 )}

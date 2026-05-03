@@ -184,7 +184,7 @@ export function parseAuthError(error: any): string {
     'weak-password': "Your password is too weak. Please use at least 6 characters.",
     'operation-not-allowed': "This login method is currently disabled. Please contact support.",
     'popup-closed-by-user': "Sign-in popup was closed before completion.",
-    'network-request-failed': "Connectivity error. If you're on a restricted network or using a mobile browser, try opening PayMoment in a new tab to bypass iframe security blocks.",
+    'network-request-failed': "Network Error: Google Sign-In is being blocked by your browser's security settings (or you are in a preview window). Please click the 'Open in New Tab' button at the top right to fix this.",
     'too-many-requests': "Too many failed attempts. Your account is temporarily locked for security. Please try again later.",
     'user-disabled': "This account has been disabled. Please contact PayMoment support.",
     'requires-recent-login': "For security reasons, please log in again to perform this sensitive action.",
