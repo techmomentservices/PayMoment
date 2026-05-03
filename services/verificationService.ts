@@ -26,7 +26,7 @@ const RESPONSE_SCHEMA = {
 };
 
 export const verifyBVN = async (bvn: string): Promise<VerificationResult> => {
-  const apiKey = (process as any).env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     return { success: false, error: "Verification system offline (Missing API Key)" };
   }
@@ -66,7 +66,7 @@ export const verifyBVN = async (bvn: string): Promise<VerificationResult> => {
 };
 
 export const verifyNIN = async (nin: string): Promise<VerificationResult> => {
-  const apiKey = (process as any).env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
     return { success: false, error: "Verification system offline (Missing API Key)" };
   }

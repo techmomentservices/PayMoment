@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { Transaction, BudgetCategory } from "../types";
 
 export const analyzeFinances = async (query: string, transactions: Transaction[], budgetCategories: BudgetCategory[] = []) => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   
   if (!apiKey) {
     console.error("Gemini API Key is missing. Please check your environment variables.");

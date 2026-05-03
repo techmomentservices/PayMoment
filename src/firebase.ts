@@ -34,19 +34,36 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager
 } from 'firebase/firestore';
-// Use the auto-generated Firebase configuration from the platform
-import firebaseConfig from '../firebase-applet-config.json';
+// Use environment variables for configuration to support Vercel/External deploys
+// Fallback values are included to ensure AI Studio preview works immediately
+const KNOWN_DB_ID = "ai-studio-35851fed-9cf7-4294-8852-5dcebb14f012";
+const rawDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID;
+
+// Sanitize database ID: if it's a URL or empty, use the known ID for this project
+let sanitizedDatabaseId = rawDatabaseId;
+if (!sanitizedDatabaseId || sanitizedDatabaseId.includes('://')) {
+  sanitizedDatabaseId = KNOWN_DB_ID;
+}
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBUxwKpDlGLSi17EosrO0wLXyeWeeLIXuE",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "gen-lang-client-0972243679.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "gen-lang-client-0972243679",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "gen-lang-client-0972243679.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "253270431172",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:253270431172:web:5cc077843ee00536d08091",
+  firestoreDatabaseId: sanitizedDatabaseId
+};
 
 // Initialize Firebase App
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore
+// Initialize Firestore with sanitized ID
+// Simplified initialization to avoid IndexedDB issues in some restricted environments
+// We'll let Firestore handle the cache defaults or provide a safe configuration
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  }),
   experimentalForceLongPolling: true 
-}, firebaseConfig.firestoreDatabaseId);
+}, sanitizedDatabaseId);
 
 // Initialize Auth
 export const auth = getAuth(app);
