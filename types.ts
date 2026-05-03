@@ -12,6 +12,8 @@ export interface Transaction {
   recipientUid?: string;
   senderUid?: string;
   recipientBank?: string;
+  senderAccountNumber?: string;
+  recipientAccountNumber?: string;
 }
 
 export interface DebtInfo {

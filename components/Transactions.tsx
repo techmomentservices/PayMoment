@@ -141,7 +141,9 @@ const Transactions: React.FC<TransactionsProps> = ({ user, setUser, notify }) =>
               <div className="bg-slate-50 dark:bg-slate-800/50 p-8 rounded-[2.5rem] flex flex-col items-center gap-2 border border-slate-100 dark:border-slate-800"><p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Amount Settled</p><h5 className={`text-3xl md:text-4xl font-black tracking-tighter ${selectedTx.type === 'credit' ? 'text-emerald-600' : 'text-slate-900 dark:text-white'}`}>{selectedTx.type === 'credit' ? '+' : '-'}₦{selectedTx.amount.toLocaleString()}</h5></div>
               <div className="space-y-4 py-8 border-b border-dashed border-slate-200 dark:border-slate-800">
                 <ReceiptRow label="Sender" value={getSenderName(selectedTx)} />
+                {selectedTx.senderAccountNumber && <ReceiptRow label="Payer Account" value={selectedTx.senderAccountNumber} />}
                 <ReceiptRow label="Destination" value={getRecipientAccount(selectedTx)} />
+                {selectedTx.recipientAccountNumber && <ReceiptRow label="Beneficiary Account" value={selectedTx.recipientAccountNumber} />}
                 {selectedTx.recipientBank && <ReceiptRow label="Recipient Bank" value={selectedTx.recipientBank} />}
                 <ReceiptRow label="Narration" value={selectedTx.remark || 'Moment Transfer'} />
                 <ReceiptRow label="Date & Time" value={new Date(selectedTx.timestamp).toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })} />

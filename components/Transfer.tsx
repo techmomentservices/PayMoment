@@ -31,6 +31,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
   const [remark, setRemark] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [verifiedName, setVerifiedName] = useState('');
+  const [verifiedAccountNumber, setVerifiedAccountNumber] = useState('');
   const [isEditingVerifiedName, setIsEditingVerifiedName] = useState(false);
   const [recipientUid, setRecipientUid] = useState<string | null>(null);
   const [pin, setPin] = useState('');
@@ -92,6 +93,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
               const foundUser: any = await findUserByAccount(cleanAccountNumber);
               if (foundUser) {
                 setVerifiedName(foundUser.name.toUpperCase());
+                setVerifiedAccountNumber(foundUser.accountNumber);
                 setRecipientUid(foundUser.uid);
                 setVerifying(false);
                 return;
@@ -113,6 +115,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
               
               if (foundUser) {
                 setVerifiedName(foundUser.name.toUpperCase());
+                setVerifiedAccountNumber(foundUser.accountNumber);
                 setRecipientUid(foundUser.uid);
               } else {
                 setVerifiedName("USER NOT FOUND");
@@ -128,6 +131,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
             const sandboxAcc = await findSandboxAccount(cleanAccountNumber);
             if (sandboxAcc) {
               setVerifiedName(sandboxAcc.accountName.toUpperCase());
+              setVerifiedAccountNumber(cleanAccountNumber);
               setVerifying(false);
               return;
             }
@@ -135,6 +139,7 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
             const result = await performNameEnquiry(cleanAccountNumber, targetBank);
             if (result.success && result.accountName) {
               setVerifiedName(result.accountName);
+              setVerifiedAccountNumber(cleanAccountNumber);
             } else {
               setVerifiedName("VERIFICATION FAILED");
               notify(result.error || "Could not verify account name. Please check the details.", "error");
@@ -289,7 +294,9 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
         status: 'completed',
         remark: remark,
         recipientUid: recipientUid || undefined,
-        recipientBank: type === 'bank' ? bank : 'PayMoment'
+        recipientBank: type === 'bank' ? bank : 'PayMoment',
+        senderAccountNumber: user.accountNumber,
+        recipientAccountNumber: verifiedAccountNumber || (type === 'bank' ? accountNumber : payMomentValue)
       };
       
       await processTransaction(tx, 'NGN', txPin);
@@ -321,11 +328,13 @@ const Transfer: React.FC<TransferProps> = ({ notify, user, setUser, processTrans
            </div>
            <div className="space-y-3">
               <ReceiptDetailRow label="Sender" value={user.name} />
+              <ReceiptDetailRow label="Payer Account" value={user.accountNumber} isMono />
               <ReceiptDetailRow 
                 label="Recipient" 
                 value={verifiedName} 
                 suffix={recipientUid ? <span className="text-blue-500 ml-1">✓</span> : undefined}
               />
+              <ReceiptDetailRow label="Beneficiary Account" value={verifiedAccountNumber || accountNumber || payMomentValue} isMono />
               <ReceiptDetailRow label="Bank" value={type === 'bank' ? bank : 'PayMoment'} />
               <ReceiptDetailRow label="Amount" value={`₦${amount}`} />
               <ReceiptDetailRow label="Date & Time" value={new Date().toLocaleString('en-NG', { dateStyle: 'medium', timeStyle: 'short' })} />

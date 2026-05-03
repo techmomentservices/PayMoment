@@ -538,7 +538,8 @@ const App: React.FC = () => {
       title: 'Account Funding',
       category: 'Deposit',
       timestamp: new Date().toISOString(),
-      status: 'completed'
+      status: 'completed',
+      recipientAccountNumber: user?.accountNumber
     };
     await processTransaction(tx, 'NGN');
   }, [firebaseUser, processTransaction]);
